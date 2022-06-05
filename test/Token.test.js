@@ -98,42 +98,42 @@ contract('Token ', ([deployer, receiver, exchange]) => {
                 await token.transfer(invalidAddress, amount.toString(), { from: deployer }).should.be.rejectedWith(EVM_REVERT);
             });
         });
+    });
 
-        describe('approving tokens', () => {
-            let result;
-            let amount;
+    describe('approving tokens', () => {
+        let result;
+        let amount;
 
-            beforeEach(async () => {
-                amount = tokens('100');
-                result = await token.approve(exchange, amount, { from: deployer });
+        beforeEach(async () => {
+            amount = tokens('100');
+            result = await token.approve(exchange, amount, { from: deployer });
+        })
+
+        describe('success', () => {
+            it('allocates an allowance for delegated token spending on exchange', async () => {
+                const allowance = await token.allowance(deployer, exchange)
+                allowance.toString().should.equal(amount.toString())
+            });
+
+            it('emits an Approval event', async () => {
+                const log = result.logs[0];
+                log.event.should.eq('Approval');
+    
+                const event = log.args;
+                event.owner.toString().should.equal(deployer, 'owner is correct');
+                event.spender.should.equal(exchange, 'spender is correct');
+                event.value.toString().should.equal(amount.toString(), 'value is correct');
+            });
+        });
+
+        describe('failure', () => {
+            it('allocates an allowance for delegated token spending', async () => {
+                it('rejects invalid spenders', async () => {
+                    let invalidAddress = '0x0000000000000000000000000000000000000000'
+                    await token.approve(invalidAddress, amount.toString(), { from: deployer }).should.be.rejected;
+                });
             })
-
-            describe('success', () => {
-                it('allocates an allowance for delegated token spending on exchange', async () => {
-                    const allowance = await token.allowance(deployer, exchange)
-                    allowance.toString().should.equal(amount.toString())
-                });
-
-                it('emits an Approval event', async () => {
-                    const log = result.logs[0];
-                    log.event.should.eq('Approval');
-        
-                    const event = log.args;
-                    event.owner.toString().should.equal(deployer, 'owner is correct');
-                    event.spender.should.equal(exchange, 'spender is correct');
-                    event.value.toString().should.equal(amount.toString(), 'value is correct');
-                });
-            });
-
-            describe('failure', () => {
-                it('allocates an allowance for delegated token spending', async () => {
-                    it('rejects invalid spenders', async () => {
-                        let invalidAddress = '0x0000000000000000000000000000000000000000'
-                        await token.approve(invalidAddress, amount.toString(), { from: deployer }).should.be.rejected;
-                    });
-                })
-            });
-        }) 
+        });
     });
 
     describe('Delegated token transfers', () => {
