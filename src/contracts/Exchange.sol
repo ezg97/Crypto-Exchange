@@ -16,8 +16,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // [X] Withdraw Ether
 
 // [X] Check Balances
-// [ ] Make Order
-// [ ] Cancel Order
+// [X] Make Order
+// [X] Cancel Order
 // [ ] Fill Order
 
 // [ ] Charge Fees
@@ -36,12 +36,46 @@ contract Exchange {
         0x0: balances
     }*/
     mapping(address => mapping(address => uint256)) public tokens;
-
+    mapping(uint256 => _Order) public orders; // key: id, value: order struct
+    uint256 public orderCount;
+    mapping(uint256 => bool) public orderCancelled; // key: id, value: order struct
 
     // Events
     event Deposit(address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint amount, uint balance);
+    event Order(
+        uint id,
+        address user,
+        address tokenGet,
+        uint amountGet,
+        address tokenGive,
+        uint amountGive,
+        uint timestamp
+    );
+    event Cancel(
+        uint id,
+        address user,
+        address tokenGet,
+        uint amountGet,
+        address tokenGive,
+        uint amountGive,
+        uint timestamp
+    );
 
+    // Structs
+    struct _Order {
+        uint id;
+        address user;
+        address tokenGet;
+        uint amountGet;
+        address tokenGive;
+        uint amountGive;
+        uint timestamp;
+    }
+
+    // a way to store the order
+
+    // add the order to storage
 
     constructor(address _feeAccount, uint256 _feePercent) public {
         feeAccount = _feeAccount;
@@ -101,6 +135,25 @@ contract Exchange {
     // view means its external and will return a value
     function balanceOf(address _token, address _user) public view returns (uint256) {
         return tokens[_token][_user];
+    }
+
+    function makeOrder(address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) public {
+        orderCount = orderCount.add(1);
+        orders[orderCount] = _Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
+        emit Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
+    }
+
+    function cancelOrder(uint256 _id) public {
+        // Fetch order from mapping
+        _Order storage _order = orders[_id];
+        // Must be my order
+        require(address(_order.user) == msg.sender);
+        // Must be a valid order
+        require(_order.id == _id);
+
+        orderCancelled[_id] = true;
+        emit Cancel(_order.id, msg.sender, _order.tokenGet, _order.amountGet, _order.tokenGive, _order.amountGive, now);
+
     }
 
 }
