@@ -11,11 +11,11 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // [X] Set the Fee Account
 
 // [X] Deposit Tokens
-// [ ] Withdraw Tokens
+// [X] Withdraw Tokens
 // [X] Deposit Ether
-// [ ] Withdraw Ether
+// [X] Withdraw Ether
 
-// [ ] Check Balances
+// [X] Check Balances
 // [ ] Make Order
 // [ ] Cancel Order
 // [ ] Fill Order
@@ -40,6 +40,7 @@ contract Exchange {
 
     // Events
     event Deposit(address token, address user, uint256 amount, uint256 balance);
+    event Withdraw(address token, address user, uint amount, uint balance);
 
 
     constructor(address _feeAccount, uint256 _feePercent) public {
@@ -58,6 +59,15 @@ contract Exchange {
         emit Deposit(ETHER, msg.sender, msg.value, tokens[ETHER][msg.sender]);
     }
 
+    function withdrawEther(uint _amount) public {
+        // Exit if they're trying to withdraw more ether than they have
+        require(tokens[ETHER][msg.sender] >= _amount);
+        tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].sub(_amount);
+        // sends back ether
+        msg.sender.transfer(_amount);
+        emit Withdraw(ETHER, msg.sender, _amount, tokens[ETHER][msg.sender]);
+    }
+
     // The exchange will move tokens to itself
     function depositToken(address _token, uint _amount) public {
         // TODO: Don't allow ether deposits
@@ -71,6 +81,26 @@ contract Exchange {
         
         // emit event
         emit Deposit(_token, msg.sender, _amount, tokens[_token][msg.sender]);
+    }
+
+    function withdrawToken(address _token, uint256 _amount) public {
+        // Make sure that it's not the ether address & they have enough tokens to withdraw
+        require(_token != ETHER);
+        require(tokens[_token][msg.sender] >= _amount);
+
+        // subtract from the current balance
+        tokens[_token][msg.sender] = tokens[_token][msg.sender].sub(_amount);
+
+        // transfer
+        require(Token(_token).transfer(msg.sender, _amount));
+
+        // emit
+        emit Withdraw(_token, msg.sender, _amount, tokens[_token][msg.sender]);
+    }
+
+    // view means its external and will return a value
+    function balanceOf(address _token, address _user) public view returns (uint256) {
+        return tokens[_token][_user];
     }
 
 }
