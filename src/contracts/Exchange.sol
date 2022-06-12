@@ -18,9 +18,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // [X] Check Balances
 // [X] Make Order
 // [X] Cancel Order
-// [ ] Fill Order
+// [X] Fill Order
 
-// [ ] Charge Fees
+// [X] Charge Fees
 
 
 contract Exchange {
@@ -39,6 +39,7 @@ contract Exchange {
     mapping(uint256 => _Order) public orders; // key: id, value: order struct
     uint256 public orderCount;
     mapping(uint256 => bool) public orderCancelled; // key: id, value: order struct
+    mapping(uint256 => bool) public orderFilled; 
 
     // Events
     event Deposit(address token, address user, uint256 amount, uint256 balance);
@@ -59,6 +60,16 @@ contract Exchange {
         uint amountGet,
         address tokenGive,
         uint amountGive,
+        uint timestamp
+    );
+    event Trade(
+        uint id,
+        address user,
+        address tokenGet,
+        uint amountGet,
+        address tokenGive,
+        uint amountGive,
+        address userFill,
         uint timestamp
     );
 
@@ -153,7 +164,43 @@ contract Exchange {
 
         orderCancelled[_id] = true;
         emit Cancel(_order.id, msg.sender, _order.tokenGet, _order.amountGet, _order.tokenGive, _order.amountGive, now);
+    }
 
+    function fillOrder(uint256 _id) public {
+        require(_id > 0 && _id <= orderCount); // check for valid order
+        require(!orderFilled[_id]); // check that it hasn't already been fulfilled 
+        require(!orderCancelled[_id]); // check that it hasn't already been cancelled 
+
+        // Fetch the order
+        _Order storage _order = orders[_id];
+        _trade(_order.id, _order.user, _order.tokenGet, _order.amountGet, _order.tokenGive, _order.amountGive);
+
+        // Mark order as filled
+        orderFilled[_order.id] = true;
+    }
+
+    function _trade(uint _orderId, address _user, address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) internal {
+        uint256 _feeAmount = _amountGet.mul(feePercent).div(100);
+        // Execute trades (swap balances)
+        // msg.sender is filling the order. _user created the order
+        // Charge Fees - will be paid by the person who fills the order (msg.sender)
+        tokens[_tokenGet][msg.sender] = tokens[_tokenGet][msg.sender].sub(_amountGet.add(_feeAmount));
+        tokens[_tokenGet][_user] = tokens[_tokenGet][_user].add(_amountGet);
+
+        // collect the fees
+        tokens[_tokenGet][feeAccount] = tokens[_tokenGet][feeAccount].add(_feeAmount);
+
+        tokens[_tokenGive][_user] = tokens[_tokenGive][_user].sub(_amountGive);
+        tokens[_tokenGive][msg.sender] = tokens[_tokenGive][msg.sender].add(_amountGive);
+
+        // Emit trade event
+        emit Trade(_orderId, _user, _tokenGet, _amountGet, _tokenGive, _amountGive, msg.sender, now);
     }
 
 }
+
+
+
+
+
+
