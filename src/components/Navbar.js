@@ -1,8 +1,26 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { accountSelector } from '../store/selectors'
+import Web3 from 'web3'
 
 class Navbar extends Component {
+
+  onConnect = async () => {
+    // Wait for loading completion to avoid race conditions with web3 injection timing.
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        console.log('connected...', accounts);
+      } catch (error) {
+        console.log('error connecting!');
+        if (error.code === 4001) {
+          // User rejected request
+          console.log('user rejected request');
+        }
+      }
+    }
+  }
+
   render() {
     return (
       <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -10,6 +28,9 @@ class Navbar extends Component {
         <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span className="navbar-toggler-icon"></span>
         </button>
+
+        <button className='btn btn-dark' onClick={this.onConnect}>Connect</button>
+
         <ul className="navbar-nav ml-auto">
           <li className="nav-item">
             <a
