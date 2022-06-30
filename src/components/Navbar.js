@@ -22,6 +22,8 @@ class Navbar extends Component {
   }
 
   render() {
+    const { connected } = this.props;
+
     return (
       <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
         <a className="navbar-brand" href="#/">Mountain Token Exchange</a>
@@ -29,7 +31,10 @@ class Navbar extends Component {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        <button className='btn btn-dark' onClick={this.onConnect}>Connect</button>
+        { connected 
+          ? <button disabled className='btn btn-primary' data-toggle="tooltip" data-placement="bottom" title="Connected to a MetaMask Account">Connected</button>
+          : <button className='btn btn-dark' onClick={this.onConnect} data-toggle="tooltip" data-placement="bottom" title="Connect to a MetaMask Account">Connect</button>
+        }
 
         <ul className="navbar-nav ml-auto">
           <li className="nav-item">

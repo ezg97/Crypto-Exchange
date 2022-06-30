@@ -10,6 +10,7 @@ import {
   loadExchange
 } from '../store/interactions'
 import { contractsLoadedSelector } from '../store/selectors'
+import Unconnected from './Unconnected';
 
 class App extends Component {
   componentWillMount() {
@@ -35,8 +36,9 @@ class App extends Component {
   render() {
     return (
       <div>
-        <Navbar />
-        { this.props.contractsLoaded ? <Content /> : <div className="content"></div> }
+        <Navbar connected={this.props.contractsLoaded} />
+        test
+        { this.props.contractsLoaded ? <Content /> : <Unconnected /> }
       </div>
     );
   }

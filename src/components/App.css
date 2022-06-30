@@ -14,6 +14,14 @@
   z-index: 1
 }
 
+.unconnected {
+  color: white;
+}
+
+.dark:hover, .dark:focus {
+  cursor: pointer;
+}
+
 .content > div {
   width: 20%;
   padding-right: 8px
